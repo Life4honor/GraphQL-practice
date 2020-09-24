@@ -2,21 +2,29 @@ import { graphql, buildSchema } from "graphql";
 
 const schema = buildSchema(`
   type Query {
-      message: String
+      greeting(name: String): String
   }
 `);
 
 const resolver = () => {
-  const message = () => {
-    return "Hello world";
+  const greeting = (args) => {
+    return `Hello ${args.name}`;
   };
 
-  return { message };
+  return { greeting };
 };
 
 const executeQuery = async () => {
-  const result = await graphql(schema, "{ message }", resolver());
-  console.log(result.data);
+  const result = await graphql(
+    schema,
+    `
+      {
+        greeting(name: "John")
+      }
+    `,
+    resolver()
+  );
+  console.log(result);
 };
 
 executeQuery();
