@@ -1,30 +1,113 @@
 import { graphql, buildSchema } from "graphql";
 
+const db = {
+  cars: [
+    {
+      id: "a",
+      brand: "Ford",
+      color: "Blue",
+      doors: 4,
+      type: "Sedan",
+    },
+    {
+      id: "b",
+      brand: "Tesla",
+      color: "Red",
+      doors: 4,
+      type: "SUV",
+    },
+    {
+      id: "c",
+      brand: "Toyota",
+      color: "White",
+      doors: 4,
+      type: "Coupe",
+    },
+  ],
+};
+
 const schema = buildSchema(`
+  enum CarTypes {
+    Sedan
+    SUV
+    Coupe
+  }
+  type Car {
+      id: ID!
+      brand: String! 
+      color: String!
+      doors: Int!
+      type: CarTypes!
+  }
   type Query {
-      greeting(name: String): String
+    carsByType(type: CarTypes!): [Car]
+    carsById(id:ID!): Car
+  }
+  type Mutation {
+    insertCar(brand: String!, color: String!, doors: Int!, type: CarTypes!): [Car]!
   }
 `);
 
 const resolver = () => {
-  const greeting = (args) => {
-    return `Hello ${args.name}`;
+  const carsByType = (args) => {
+    return db.cars.filter((car) => car.type === args.type);
   };
-
-  return { greeting };
+  const carsById = (args) => {
+    return db.cars.filter((car) => car.id === args.id)[0];
+  };
+  const insertCar = ({ brand, color, doors, type }) => {
+    db.cars.push({
+      id: Math.random().toString(),
+      brand: brand,
+      color: color,
+      doors: doors,
+      type: type,
+    });
+    return db.cars;
+  };
+  return { carsByType, carsById, insertCar };
 };
 
 const executeQuery = async () => {
-  const result = await graphql(
-    schema,
-    `
-      {
-        greeting(name: "John")
-      }
-    `,
-    resolver()
-  );
-  console.log(result);
+  const queryByType = `
+  {
+    carsByType(type: Coupe){
+      brand
+      color
+      type
+      id
+    }
+  }`;
+
+  const queryByID = `
+  {
+    carsById(id: "a"){
+      brand
+      type
+      color
+      id
+    }
+  }`;
+
+  const mutation = `
+  mutation {
+    insertCar(brand: "Nissan", color: "black", doors:4, type: SUV){
+      brand
+      color
+      id
+      type
+    }
+  }
+  `;
+
+  const responseByType = await graphql(schema, queryByType, resolver());
+  console.log("responseByType -", responseByType.data);
+
+  const responseById = await graphql(schema, queryByID, resolver());
+  console.log("responseById -", responseById.data);
+
+  const resOne = await graphql(schema, mutation, resolver());
+  console.log("insertCar -", resOne.data);
 };
 
 executeQuery();
