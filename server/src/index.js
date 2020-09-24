@@ -1,6 +1,4 @@
-import { graphql, buildSchema } from "graphql";
-import express from "express";
-import { graphqlHTTP } from "express-graphql";
+import { ApolloServer, gql } from "apollo-server";
 
 const db = {
   cars: [
@@ -28,7 +26,7 @@ const db = {
   ],
 };
 
-const schema = buildSchema(`
+const schema = gql(`
   enum CarTypes {
     Sedan
     SUV
@@ -50,32 +48,39 @@ const schema = buildSchema(`
   }
 `);
 
-const resolvers = () => {
-  const carsByType = (args) => {
-    return db.cars.filter((car) => car.type === args.type);
-  };
-  const carsById = (args) => {
-    return db.cars.filter((car) => car.id === args.id)[0];
-  };
-  const insertCar = ({ brand, color, doors, type }) => {
-    db.cars.push({
-      id: Math.random().toString(),
-      brand: brand,
-      color: color,
-      doors: doors,
-      type: type,
-    });
-    return db.cars;
-  };
-  return { carsByType, carsById, insertCar };
+const resolvers = {
+  Query: {
+    carsByType: (parent, args, context, info) => {
+      return db.cars.filter((car) => car.type === args.type);
+    },
+    carsById: (parent, args, context, info) => {
+      return db.cars.filter((car) => car.id === args.id)[0];
+    },
+  },
+  Car: {
+    brand: (parent, args, context, info) => {
+      return db.cars.filter((car) => car.brand === parent.brand)[0].brand;
+    },
+  },
+  Mutation: {
+    insertCar: (_, { brand, color, doors, type }) => {
+      db.cars.push({
+        id: Math.random().toString(),
+        brand: brand,
+        color: color,
+        doors: doors,
+        type: type,
+      });
+      return db.cars;
+    },
+  },
 };
 
-const app = express();
-app.use(
-  "/graphql",
-  graphqlHTTP({ schema: schema, rootValue: resolvers(), graphiql: true })
-);
+const server = new ApolloServer({
+  typeDefs: schema,
+  resolvers,
+});
 
-app.listen(3000, () => {
-  console.log("GraphQL server is listening on 3000 port");
+server.listen().then(({ url }) => {
+  console.log(`Server ready at ${url}`);
 });
