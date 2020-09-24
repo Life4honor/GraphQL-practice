@@ -70,8 +70,8 @@ const resolver = () => {
 
 const executeQuery = async () => {
   const queryByType = `
-  {
-    carsByType(type: Coupe){
+  query carsByType($type: CarTypes!){
+    carsByType(type: $type){
       brand
       color
       type
@@ -80,8 +80,8 @@ const executeQuery = async () => {
   }`;
 
   const queryByID = `
-  {
-    carsById(id: "a"){
+  query carsById($id: ID!){
+    carsById(id: $id){
       brand
       type
       color
@@ -90,8 +90,8 @@ const executeQuery = async () => {
   }`;
 
   const mutation = `
-  mutation {
-    insertCar(brand: "Nissan", color: "black", doors:4, type: SUV){
+  mutation insertCar($brand: String!, $color: String!, $doors: Int!, $type: CarTypes!){
+    insertCar(brand: $brand, color: $color, doors:$doors, type: $type){
       brand
       color
       id
@@ -100,14 +100,23 @@ const executeQuery = async () => {
   }
   `;
 
-  const responseByType = await graphql(schema, queryByType, resolver());
+  const responseByType = await graphql(schema, queryByType, resolver(), null, {
+    type: "SUV",
+  });
   console.log("responseByType -", responseByType.data);
 
-  const responseById = await graphql(schema, queryByID, resolver());
+  const responseById = await graphql(schema, queryByID, resolver(), null, {
+    id: "a",
+  });
   console.log("responseById -", responseById.data);
 
-  const resOne = await graphql(schema, mutation, resolver());
-  console.log("insertCar -", resOne.data);
+  const res = await graphql(schema, mutation, resolver(), null, {
+    brand: "Nissan",
+    color: "red",
+    doors: 4,
+    type: "SUV",
+  });
+  console.log("insertCar -", res.data);
 };
 
 executeQuery();
