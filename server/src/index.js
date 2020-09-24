@@ -1,4 +1,6 @@
 import { graphql, buildSchema } from "graphql";
+import express from "express";
+import { graphqlHTTP } from "express-graphql";
 
 const db = {
   cars: [
@@ -48,7 +50,7 @@ const schema = buildSchema(`
   }
 `);
 
-const resolver = () => {
+const resolvers = () => {
   const carsByType = (args) => {
     return db.cars.filter((car) => car.type === args.type);
   };
@@ -68,55 +70,12 @@ const resolver = () => {
   return { carsByType, carsById, insertCar };
 };
 
-const executeQuery = async () => {
-  const queryByType = `
-  query carsByType($type: CarTypes!){
-    carsByType(type: $type){
-      brand
-      color
-      type
-      id
-    }
-  }`;
+const app = express();
+app.use(
+  "/graphql",
+  graphqlHTTP({ schema: schema, rootValue: resolvers(), graphiql: true })
+);
 
-  const queryByID = `
-  query carsById($id: ID!){
-    carsById(id: $id){
-      brand
-      type
-      color
-      id
-    }
-  }`;
-
-  const mutation = `
-  mutation insertCar($brand: String!, $color: String!, $doors: Int!, $type: CarTypes!){
-    insertCar(brand: $brand, color: $color, doors:$doors, type: $type){
-      brand
-      color
-      id
-      type
-    }
-  }
-  `;
-
-  const responseByType = await graphql(schema, queryByType, resolver(), null, {
-    type: "SUV",
-  });
-  console.log("responseByType -", responseByType.data);
-
-  const responseById = await graphql(schema, queryByID, resolver(), null, {
-    id: "a",
-  });
-  console.log("responseById -", responseById.data);
-
-  const res = await graphql(schema, mutation, resolver(), null, {
-    brand: "Nissan",
-    color: "red",
-    doors: 4,
-    type: "SUV",
-  });
-  console.log("insertCar -", res.data);
-};
-
-executeQuery();
+app.listen(3000, () => {
+  console.log("GraphQL server is listening on 3000 port");
+});
