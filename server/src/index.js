@@ -51,10 +51,10 @@ const schema = gql(`
 const resolvers = {
   Query: {
     carsByType: (parent, args, context, info) => {
-      return db.cars.filter((car) => car.type === args.type);
+      return context.db.cars.filter((car) => car.type === args.type);
     },
     carsById: (parent, args, context, info) => {
-      return db.cars.filter((car) => car.id === args.id)[0];
+      return context.db.cars.filter((car) => car.id === args.id)[0];
     },
   },
   Car: {
@@ -64,21 +64,32 @@ const resolvers = {
   },
   Mutation: {
     insertCar: (_, { brand, color, doors, type }) => {
-      db.cars.push({
+      context.db.cars.push({
         id: Math.random().toString(),
         brand: brand,
         color: color,
         doors: doors,
         type: type,
       });
-      return db.cars;
+      return context.db.cars;
     },
   },
+};
+
+const dbConnection = () => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(db);
+    }, 2000);
+  });
 };
 
 const server = new ApolloServer({
   typeDefs: schema,
   resolvers,
+  context: async () => {
+    return { db: await dbConnection() };
+  },
 });
 
 server.listen().then(({ url }) => {
