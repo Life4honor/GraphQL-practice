@@ -1,7 +1,8 @@
 import React from "react";
 import ApolloClient from "apollo-boost";
-import Provider from "./Provider";
+import { ApolloProvier } from "react-apollo";
 import Cars from "./Cars";
+import CarsTwo from "./CarsTwo";
 
 const client = new ApolloClient({
   uri: "http://localhost:4000",
@@ -10,9 +11,10 @@ const client = new ApolloClient({
 function App() {
   return (
     <div>
-      <Provider client={client}>
+      <ApolloProvier client={client}>
         <Cars />
-      </Provider>
+        <CarsTwo />
+      </ApolloProvier>
     </div>
   );
 }
